@@ -1,0 +1,103 @@
+body {
+    background: #121212;
+    color: #e0e0e0;
+    font-family: 'Orbitron', sans-serif;
+    min-height: 100vh;
+    padding-top: 60px;
+}
+
+.navbar {
+    background-color: rgba(0, 0, 0, 0.92);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.15); /* BORDE INFERIOR SUTIL CYAN */
+    box-shadow: 0 4px 10px rgba(0, 255, 255, 0.05); /* EFECTO DE GLOW NEÓN SUAVE */
+    backdrop-filter: blur(10px);
+}
+
+
+.navbar-nav .nav-link {
+    color: #00cfe6 !important;
+    font-weight: 900;
+    margin-right: 10px;
+    letter-spacing: 1px;
+}
+
+.navbar-nav .nav-link:hover {
+    text-decoration: underline;
+}
+
+.btn-outline-danger {
+    border-color: #ff4c4c;
+    color: #ff4c4c;
+    background-color: rgb(48, 48, 53);
+    letter-spacing: 1px
+
+
+}
+
+.btn-outline-danger:hover {
+    background-color: #ff4c4c;
+    color: #000;
+}
+
+
+.hero {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.02);
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    color: #00cfe6;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: #aaaaaa;
+}
+
+h2 {
+    color: #00cfe6;
+}
+
+.card-game {
+    background-color: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.card-game:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 25px rgba(0,255,255,0.07);
+}
+
+.card-game img {
+    border-radius: 12px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem;
+}
+
+.btn-outline-info {
+    color: #00cfe6;
+    border-color: #00cfe6;
+    background-color: rgb(48, 48, 53);
+    letter-spacing: 1px
+
+}
+
+.btn-outline-info:hover {
+    background-color: #00cfe6;
+    color: #121212;
+}
+
+.btn-sm {
+    padding: 0.45rem 0.9rem;
+    font-size: 1rem;
+}
