@@ -1,3 +1,4 @@
+/* ============ GENERALES ============ */
 body {
     background: #121212;
     color: #e0e0e0;
@@ -6,13 +7,13 @@ body {
     padding-top: 60px;
 }
 
+/* ============ NAVBAR ============ */
 .navbar {
     background-color: rgba(0, 0, 0, 0.92);
-    border-bottom: 1px solid rgba(0, 255, 255, 0.15); /* BORDE INFERIOR SUTIL CYAN */
-    box-shadow: 0 4px 10px rgba(0, 255, 255, 0.05); /* EFECTO DE GLOW NEÓN SUAVE */
+    border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 255, 255, 0.05);
     backdrop-filter: blur(10px);
 }
-
 
 .navbar-nav .nav-link {
     color: #00cfe6 !important;
@@ -25,13 +26,13 @@ body {
     text-decoration: underline;
 }
 
+/* ============ BOTONES ============ */
 .btn-outline-danger {
     border-color: #ff4c4c;
     color: #ff4c4c;
     background-color: rgb(48, 48, 53);
-    letter-spacing: 1px
-
-
+    letter-spacing: 1px;
+    padding-left: 5px;
 }
 
 .btn-outline-danger:hover {
@@ -39,7 +40,24 @@ body {
     color: #000;
 }
 
+.btn-outline-info {
+    color: #00cfe6;
+    border-color: #00cfe6;
+    background-color: rgb(48, 48, 53);
+    letter-spacing: 1px;
+}
 
+.btn-outline-info:hover {
+    background-color: #00cfe6;
+    color: #121212;
+}
+
+.btn-sm {
+    padding: 0.45rem 0.9rem;
+    font-size: 1rem;
+}
+
+/* ============ HERO PRINCIPAL ============ */
 .hero {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
@@ -60,10 +78,12 @@ body {
     color: #aaaaaa;
 }
 
+/* ============ TÍTULOS GENERALES ============ */
 h2 {
     color: #00cfe6;
 }
 
+/* ============ TARJETAS DE JUEGO (CARDS) ============ */
 .card-game {
     background-color: rgba(255, 255, 255, 0.015);
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -77,27 +97,63 @@ h2 {
     box-shadow: 0 6px 25px rgba(0,255,255,0.07);
 }
 
+/* ============ IMÁGENES UNIFORMES EN LAS TARJETAS DE JUEGO ============ */
 .card-game img {
-    border-radius: 12px;
+    height: 420px;
     width: 100%;
-    height: auto;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+    border-radius: 12px;
     margin-bottom: 1rem;
 }
 
-.btn-outline-info {
-    color: #00cfe6;
+
+
+/* ============ FORMULARIOS (INPUTS Y LABELS) ============ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+    background-color: #1e1e1e;
+    border: 1px solid rgba(0, 255, 255, 0.15);
+    color: #e0e0e0;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
     border-color: #00cfe6;
-    background-color: rgb(48, 48, 53);
-    letter-spacing: 1px
-
+    box-shadow: 0 0 4px rgba(0, 255, 255, 0.4);
 }
 
-.btn-outline-info:hover {
-    background-color: #00cfe6;
+label {
+    color: #00cfe6;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* ============ UTILIDADES (CLASES EXTRA) ============ */
+.text-cyan {
+    color: #00cfe6 !important;
+}
+
+.bg-rango {
+    background: linear-gradient(45deg, #00cfe6, #0088ff);
     color: #121212;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-family: 'Orbitron', sans-serif;
 }
 
-.btn-sm {
-    padding: 0.45rem 0.9rem;
-    font-size: 1rem;
-}

@@ -55,7 +55,7 @@ class Videojuego(models.Model):
     fecha_lanzamiento = models.DateField()
 
     # IMAGEN EN FORMATO BASE64
-    imagen_portada_base64 = models.TextField(blank=True, null=True)
+    imagen_portada_base64 = models.TextField(blank=True, null=True)  # NO USES CharField
 
     disponible = models.BooleanField(default=True)
 
@@ -64,7 +64,16 @@ class Videojuego(models.Model):
 
     # MÉTODO PARA GUARDAR IMAGEN EN BASE64
     def set_imagen_portada_from_file(self, file):
-        self.imagen_portada_base64 = "data:image/jpeg;base64," + base64.b64encode(file.read()).decode()
+        ext = file.name.split('.')[-1].lower()
+        mime = 'jpeg' if ext in ['jpg', 'jpeg'] else 'png'
+
+        # SI EL ARCHIVO YA SE LEYÓ ANTES, REINICIAMOS EL CURSOR
+        file.seek(0)
+        data = file.read()
+
+        encoded = base64.b64encode(data).decode()
+        self.imagen_portada_base64 = f'data:image/{mime};base64,{encoded}'
+
 
 #=================================================================
 # BIBLIOTECA DEL USUARIO → RELACIÓN N:M ENTRE USUARIO Y VIDEOJUEGO
@@ -141,14 +150,27 @@ class TransaccionItem(models.Model):
 #=================================================================
 # CÓDIGOS PROMOCIONALES CANJEABLES POR ÍTEMS
 #=================================================================
+#=================================================================
+# CÓDIGOS PROMOCIONALES → VIDEOJUEGO O SALDO VIRTUAL (MULTI-USO)
+#=================================================================
 class CodigoPromocional(models.Model):
     codigo_texto = models.CharField(max_length=50, unique=True)
     descripcion = models.TextField()
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    fecha_expiracion = models.DateField()
-    usado = models.BooleanField(default=False)
 
-    # RELACIÓN: UN CÓDIGO VA LIGADO A UN ITEM ESPECÍFICO
+    videojuego = models.ForeignKey(Videojuego, on_delete=models.SET_NULL, null=True, blank=True)
+    saldo_extra = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+
+    usos_totales = models.PositiveIntegerField(default=1)  # CUÁNTAS VECES SE PUEDE USAR
+    usos_actuales = models.PositiveIntegerField(default=0)  # CUÁNTAS VECES SE HA USADO
+    usado = models.BooleanField(default=False)  # BOOLEAN
+    fecha_expiracion = models.DateField()
+    
+    # DETALLE: guardar quién lo usó la última vez
+    usuario_ultimo = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.codigo_texto
+
+    def esta_activo(self):
+        from django.utils import timezone
+        return self.usos_actuales < self.usos_totales and self.fecha_expiracion >= timezone.now().date()
