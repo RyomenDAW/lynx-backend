@@ -10,50 +10,7 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg fixed-top navbar-dark">
-        <div class="container-fluid">
-          <a class="navbar-brand fw-bold text-cyan" href="/">Lynx Store</a>
-      
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lynxNavbar" aria-controls="lynxNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-      
-          <div class="collapse navbar-collapse justify-content-between" id="lynxNavbar">
-            {% if user.is_authenticated %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item"><a class="nav-link" href="/biblioteca">Biblioteca</a></li>
-              <li class="nav-item"><a class="nav-link" href="/videojuegos">Tienda</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Inventario</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Perfil</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'lista_codigos' %}">Códigos Promocionales</a></li>
-    
-            </ul>
-            {% else %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
-            {% endif %}
-      
-            {% if user.is_authenticated %}
-            <div class="d-flex align-items-center gap-2 text-light">
-              <span>Bienvenido, <strong>{{ user.username }}</strong></span>
-              {% if user.rol %}
-              <span class="bg-rango">Rango: <strong>{{ user.rol }}</strong></span>
-              {% endif %}
-              <span class="text-cyan">💰 {{ user.saldo_virtual }} €</span>
-
-              <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-              </form>
-            </div>
-            {% else %}
-            <div class="d-flex gap-2">
-              <a href="{% url 'login' %}" class="btn btn-outline-info btn-sm">Login</a>
-              <a href="{% url 'registro' %}" class="btn btn-outline-light btn-sm">Registrarse</a>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      </nav>
+{% include 'partials/navbar.html' %}
 
     <div class="container mt-5 pt-4">
         <h2 class="text-center text-info mb-4">Códigos promocionales</h2>

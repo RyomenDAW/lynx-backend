@@ -10,7 +10,9 @@ urlpatterns = [
     path('videojuegos/crear/', views.crear_videojuego, name='crear_videojuego'),
     path('videojuegos/editar/<int:id>/', views.editar_videojuego, name='editar_videojuego'),
     path('videojuegos/eliminar/<int:id>/', views.eliminar_videojuego, name='eliminar_videojuego'),
-    
+    path('videojuegos/importar/', views.importar_desde_steam, name='importar_desde_steam'),
+    path('videojuegos/<int:id>/', views.detalle_videojuego, name='detalle_videojuego'),
+
     path('biblioteca/', views.biblioteca_usuario, name='biblioteca'),
     path('comprar/<int:id>/', views.comprar_videojuego, name='comprar_videojuego'),
     path('marcar_favorito/<int:biblioteca_id>/', views.marcar_favorito, name='marcar_favorito'),
@@ -33,5 +35,12 @@ urlpatterns = [
 
 
     path('perfil/', views.perfil_usuario, name='perfil_usuario'),
+    path('editar-perfil/', views.editar_perfil, name='editar_perfil'),
+    path('usuarios/', ver_usuarios, name='ver_usuarios'),
+    path('usuarios/eliminar/<int:id>/', views.eliminar_usuario, name='eliminar_usuario'),
+
+
+    path('social/amigos/', views.ver_amigos, name='ver_amigos'),
+    path('social/eliminar-amigo/<int:id>/', views.eliminar_amigo, name='eliminar_amigo'),
 
 ]

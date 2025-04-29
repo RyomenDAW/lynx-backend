@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuarios - Lynx</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/principal.css' %}">
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .table th a {
+      color: cyan;
+      text-decoration: none;
+    }
+
+    .table th a:hover {
+      text-decoration: underline;
+    }
+
+    .avatar-mini {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid cyan;
+      box-shadow: 0 0 4px cyan;
+    }
+
+    .sort-arrow {
+      font-size: 0.8rem;
+      margin-left: 4px;
+    }
+
+    .active-sort {
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    .border-row {
+      border-bottom: 1px solid #000;
+    }
+
+    .btn-outline-danger-cyber {
+      color: #f55;
+      border: 1px solid #f55;
+      font-size: 0.85rem;
+      padding: 3px 10px;
+      border-radius: 8px;
+      transition: 0.2s;
+    }
+
+    .btn-outline-danger-cyber:hover {
+      background-color: #f55;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  {% include 'partials/navbar.html' %}
+
+  <div class="container mt-5 pt-4">
+    <h2 class="text-center text-cyan mb-4">Usuarios registrados</h2>
+
+    <div class="table-responsive">
+      <table class="table table-dark table-hover text-center align-middle">
+        <thead class="text-cyan">
+          <tr>
+            <th class="{% if sort == 'id' %}active-sort{% endif %}">
+              <a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                ID
+                {% if sort == 'id' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th>Avatar</th>
+            <th class="{% if sort == 'username' %}active-sort{% endif %}">
+              <a href="?sort=username&dir={% if sort == 'username' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Usuario
+                {% if sort == 'username' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th class="{% if sort == 'email' %}active-sort{% endif %}">
+              <a href="?sort=email&dir={% if sort == 'email' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Email
+                {% if sort == 'email' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th class="{% if sort == 'rol' %}active-sort{% endif %}">
+              <a href="?sort=rol&dir={% if sort == 'rol' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Rol
+                {% if sort == 'rol' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th class="{% if sort == 'date_joined' %}active-sort{% endif %}">
+              <a href="?sort=date_joined&dir={% if sort == 'date_joined' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Fecha
+                {% if sort == 'date_joined' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th class="{% if sort == 'saldo_virtual' %}active-sort{% endif %}">
+              <a href="?sort=saldo_virtual&dir={% if sort == 'saldo_virtual' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Saldo
+                {% if sort == 'saldo_virtual' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th class="{% if sort == 'reputacion' %}active-sort{% endif %}">
+              <a href="?sort=reputacion&dir={% if sort == 'reputacion' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                Reputación
+                {% if sort == 'reputacion' %}
+                  <span class="sort-arrow">{% if dir == 'asc' %}▲{% else %}▼{% endif %}</span>
+                {% endif %}
+              </a>
+            </th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in usuarios %}
+          <tr class="border-row" style="background-color: #1a1a1a;">
+            <td>{{ u.id }}</td>
+            <td>
+              {% if u.avatar_base64 %}
+                <img src="{{ u.avatar_base64 }}" class="avatar-mini" alt="Avatar">
+              {% else %}
+                <img src="{% static 'img/default-avatar.png' %}" class="avatar-mini" alt="Sin Avatar">
+              {% endif %}
+            </td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.get_rol_display }}</td>
+            <td>{{ u.date_joined|date:"d/m/Y" }}</td>
+            <td>{{ u.saldo_virtual|stringformat:"0.2f" }} €</td>
+            <td>{{ u.reputacion }}</td>
+            <td>
+              {% if user != u %}
+              <form method="post" action="{% url 'eliminar_usuario' u.id %}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar a {{ u.username }}? Esta acción no se puede deshacer.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger-cyber">Eliminar</button>
+              </form>
+              
+              {% else %}
+              <span class="text-secondary">Tú</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="text-muted">No hay usuarios.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

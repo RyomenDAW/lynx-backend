@@ -9,66 +9,52 @@
   <link rel="stylesheet" href="{% static 'css/principal.css' %}">
 </head>
 <body>
+  {% include 'partials/navbar.html' %}
 
-    <nav class="navbar navbar-expand-lg fixed-top navbar-dark">
-        <div class="container-fluid">
-          <a class="navbar-brand fw-bold text-cyan" href="/">Lynx Store</a>
       
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lynxNavbar" aria-controls="lynxNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-      
-          <div class="collapse navbar-collapse justify-content-between" id="lynxNavbar">
-            {% if user.is_authenticated %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item"><a class="nav-link" href="/biblioteca">Biblioteca</a></li>
-              <li class="nav-item"><a class="nav-link" href="/videojuegos">Tienda</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Inventario</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'perfil_usuario' %}">Perfil</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'lista_codigos' %}">Códigos Promocionales</a></li>
-    
+  <div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-4 text-center">
+        {% if user.avatar_base64 %}
+          <img src="{{ user.avatar_base64 }}" alt="Avatar" class="rounded-circle shadow" style="width: 200px; height: 200px; object-fit: cover; border: 3px solid cyan;">
+        {% else %}
+          <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="rounded-circle shadow" style="width: 200px; height: 200px; object-fit: cover; border: 3px solid cyan;">
+        {% endif %}
+        
+        <h2 class="text-cyan mt-3">{{ user.username }}</h2>
+        <p class="text-">{{ user.email }}</p>
+        
+        {% if user.verificado %}
+          <span class="badge bg-success">Verificado ✅</span>
+        {% endif %}
+      </div>
+  
+      <div class="col-md-6">
+        <div class="card bg-dark text-light shadow mb-3" style="border-radius: 15px;">
+          <div class="card-body">
+
+            <h4 class="text-info">Detalles del Perfil</h4>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item bg-dark text-light">🏷️ <strong>Rol:</strong> {{ user.get_rol_display }}</li>
+              <li class="list-group-item bg-dark text-light">💰 <strong>Saldo Virtual:</strong> {{ user.saldo_virtual }} €</li>
+              <li class="list-group-item bg-dark text-light">🗓️ <strong>Registrado en:</strong> {{ user.date_joined|date:"d/m/Y" }}</li>
+              <li class="list-group-item bg-dark text-light">⭐ <strong>Reputación:</strong> {{ user.reputacion }}</li>
             </ul>
-            {% else %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
-            {% endif %}
-      
-            {% if user.is_authenticated %}
-            <div class="d-flex align-items-center gap-2 text-light">
-              <span>Bienvenido, <strong>{{ user.username }}</strong></span>
-              {% if user.rol %}
-              <span class="bg-rango">Rango: <strong>{{ user.rol }}</strong></span>
-              {% endif %}
-              <span class="text-cyan">💰 {{ user.saldo_virtual }} €</span>
-    
-              <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-              </form>
+            <div class="d-grid mt-4">
+              <a href="{% url 'editar_perfil' %}" class="btn btn-outline-info">Editar Perfil</a>
             </div>
-            {% else %}
-            <div class="d-flex gap-2">
-              <a href="{% url 'login' %}" class="btn btn-outline-info btn-sm">Login</a>
-              <a href="{% url 'registro' %}" class="btn btn-outline-light btn-sm">Registrarse</a>
-            </div>
-            {% endif %}
           </div>
+
+
+
         </div>
-      </nav>
-      
-<div class="container mt-5 pt-5">
-  <div class="form-container">
-    <h2 class="text-center text-info mb-4">Tu perfil</h2>
 
-    <ul class="list-group">
-      <li class="list-group-item bg-dark text-light">👤 <strong>Usuario:</strong> {{ user.username }}</li>
-      <li class="list-group-item bg-dark text-light">📧 <strong>Email:</strong> {{ user.email }}</li>
-      <li class="list-group-item bg-dark text-light">🏷️ <strong>Rol:</strong> {{ user.get_rol_display }}</li>
-      <li class="list-group-item bg-dark text-light">💰 <strong>Saldo virtual:</strong> {{ user.saldo_virtual }} €</li>
-      <li class="list-group-item bg-dark text-light">🗓️ <strong>Registrado en:</strong> {{ user.date_joined|date:"d/m/Y" }}</li>
-      <li class="list-group-item bg-dark text-light">⭐ <strong>Reputación:</strong> {{ user.reputacion }}</li>
-    </ul>
+        {% if user.is_authenticated and user.rol == 'ADMIN' %}
+        <div class="d-grid mt-2">
+          <a href="{% url 'ver_usuarios' %}" class="btn btn-outline-warning">Ver todos los usuarios</a>
+        </div>
+      {% endif %}
+      </div>
+    </div>
   </div>
-</div>
-
 </body>
-</html>

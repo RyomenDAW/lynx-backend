@@ -142,3 +142,14 @@ class CodigoPromocionalForm(forms.ModelForm):
                 'class': 'form-control'
             }),
         }
+
+
+
+class EditarPerfilForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = ['username', 'email', 'avatar_base64']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }

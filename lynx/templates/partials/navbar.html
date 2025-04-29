@@ -1,0 +1,45 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-cyan" href="/">Lynx Store</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lynxNavbar" aria-controls="lynxNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-between" id="lynxNavbar">
+            {% if user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="/biblioteca">Biblioteca</a></li>
+                <li class="nav-item"><a class="nav-link" href="/videojuegos">Tienda</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Inventario</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'perfil_usuario' %}">Social</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'lista_codigos' %}">Códigos Promocionales</a></li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2 text-light">
+                {% if user.avatar_base64 %}
+                    <img src="{{ user.avatar_base64 }}" alt="Avatar" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover; border: 2px solid cyan;">
+                {% else %}
+                    <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid cyan;">
+                {% endif %}
+                
+                <div class="text-end">
+                    <span><strong>{{ user.username }}</strong></span><br>
+                    <small class="text-cyan">💰 {{ user.saldo_virtual }} €</small>
+                </div>
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="d-flex gap-2">
+                <a href="{% url 'login' %}" class="btn btn-outline-info btn-sm">Login</a>
+                <a href="{% url 'registro' %}" class="btn btn-outline-light btn-sm">Registrarse</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</nav>

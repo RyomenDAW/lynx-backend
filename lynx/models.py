@@ -74,6 +74,17 @@ class Videojuego(models.Model):
         encoded = base64.b64encode(data).decode()
         self.imagen_portada_base64 = f'data:image/{mime};base64,{encoded}'
 
+    def set_imagen_portada_from_response(self, response):
+        import base64
+        import imghdr
+
+        data = response.content
+        mime = imghdr.what(None, h=data)
+        if mime not in ['jpeg', 'png']:
+            mime = 'jpeg'
+
+        encoded = base64.b64encode(data).decode()
+        self.imagen_portada_base64 = f'data:image/{mime};base64,{encoded}'
 
 #=================================================================
 # BIBLIOTECA DEL USUARIO → RELACIÓN N:M ENTRE USUARIO Y VIDEOJUEGO
@@ -174,3 +185,17 @@ class CodigoPromocional(models.Model):
     def esta_activo(self):
         from django.utils import timezone
         return self.usos_actuales < self.usos_totales and self.fecha_expiracion >= timezone.now().date()
+
+
+class Amistad(models.Model):
+    solicitante = models.ForeignKey(Usuario, related_name='amistades_enviadas', on_delete=models.CASCADE)
+    receptor = models.ForeignKey(Usuario, related_name='amistades_recibidas', on_delete=models.CASCADE)
+    aceptada = models.BooleanField(default=False)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('solicitante', 'receptor')
+
+    def __str__(self):
+        estado = "Aceptada" if self.aceptada else "Pendiente"
+        return f"{self.solicitante} → {self.receptor} ({estado})"
