@@ -27,3 +27,4 @@ Thumbs.db
 # Archivos de migraciones (opcional)
 **/migrations/*.pyc
 **/migrations/__pycache__/
+.env

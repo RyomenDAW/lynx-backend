@@ -2,6 +2,8 @@ import base64
 import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
+
+from mysite import settings
 from .forms import *
 from .models import *
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -690,3 +692,53 @@ def eliminar_amigo(request, id):
         Q(solicitante=amigo, receptor=request.user)
     ).delete()
     return redirect('ver_amigos')
+
+
+
+
+
+
+
+
+#====================================================
+# PAYPAL
+#====================================================
+from django.views.decorators.csrf import csrf_exempt
+@login_required
+def añadir_fondos(request):
+    return render(request, 'monedero/añadir_fondos.html', {
+        'paypal_client_id': settings.PAYPAL_CLIENT_ID
+    })
+
+@csrf_exempt
+@login_required
+def confirmar_pago_paypal(request):
+    if request.method == 'POST':
+        order_id = request.POST.get('orderID')
+
+        # Obtener access token
+        auth_response = requests.post(
+            'https://api-m.sandbox.paypal.com/v1/oauth2/token',
+            auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_SECRET),
+            data={'grant_type': 'client_credentials'}
+        )
+        access_token = auth_response.json().get('access_token')
+
+        # Obtener detalles de orden
+        order_response = requests.get(
+            f'https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}',
+            headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+        )
+        order_data = order_response.json()
+
+        if order_data.get('status') == 'COMPLETED':
+            amount = float(order_data['purchase_units'][0]['amount']['value'])
+            request.user.saldo_virtual += amount
+            request.user.save()
+            return JsonResponse({'ok': True, 'nuevo_saldo': request.user.saldo_virtual})
+        else:
+            return JsonResponse({'ok': False, 'error': 'Pago no completado'}, status=400)
+    return JsonResponse({'ok': False, 'error': 'Método no permitido'}, status=405)

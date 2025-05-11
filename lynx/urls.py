@@ -50,6 +50,8 @@ urlpatterns = [
     path('social/eliminar/<int:id>/', views.eliminar_amigo, name='eliminar_amigo'),
 
 
+    path('añadir-fondos/', views.añadir_fondos, name='añadir_fondos'),
+    path('paypal/confirmar/', views.confirmar_pago_paypal, name='confirmar_pago_paypal'),
 
 
 

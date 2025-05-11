@@ -17,6 +17,20 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+
+import environ
+import os
+
+# Inicializa el entorno
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# PayPal Sandbox
+PAYPAL_CLIENT_ID = env("PAYPAL_CLIENT_ID")
+PAYPAL_SECRET = env("PAYPAL_SECRET")
+PAYPAL_MODE = env("PAYPAL_MODE")  # 'sandbox' o 'live'
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 

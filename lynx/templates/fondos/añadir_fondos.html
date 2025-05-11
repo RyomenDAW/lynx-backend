@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5 text-light text-center">
+  <h2 class="text-cyan mb-4">Añadir Fondos</h2>
+
+  <div class="mb-4 w-50 mx-auto">
+    <label for="monto" class="form-label">Cantidad (€):</label>
+    <input type="number" id="monto" class="form-control text-dark" placeholder="Ej: 10.00" min="1" step="0.01">
+  </div>
+
+  <div id="paypal-button-container" class="d-flex justify-content-center"></div>
+</div>
+
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=EUR"></script>
+<script>
+paypal.Buttons({
+  createOrder: function(data, actions) {
+    const monto = document.getElementById('monto').value;
+    if (!monto || parseFloat(monto) <= 0) {
+      alert('Introduce una cantidad válida');
+      return;
+    }
+
+    return actions.order.create({
+      purchase_units: [{
+        amount: {
+          value: monto
+        }
+      }]
+    });
+  },
+  onApprove: function(data, actions) {
+    return actions.order.capture().then(function(details) {
+      fetch("{% url 'confirmar_pago_paypal' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: new URLSearchParams({
+          orderID: data.orderID
+        })
+      })
+      .then(res => res.json())
+      .then(json => {
+        if (json.ok) {
+          alert("Fondos añadidos correctamente. Nuevo saldo: €" + json.nuevo_saldo.toFixed(2));
+          location.reload();
+        } else {
+          alert("Error: " + json.error);
+        }
+      });
+    });
+  }
+}).render('#paypal-button-container');
+</script>
+{% endblock %}
