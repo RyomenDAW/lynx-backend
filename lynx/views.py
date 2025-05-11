@@ -1,4 +1,5 @@
 import base64
+from decimal import Decimal
 import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
@@ -706,39 +707,46 @@ def eliminar_amigo(request, id):
 from django.views.decorators.csrf import csrf_exempt
 @login_required
 def añadir_fondos(request):
-    return render(request, 'monedero/añadir_fondos.html', {
+    return render(request, 'fondos/añadir_fondos.html', {
         'paypal_client_id': settings.PAYPAL_CLIENT_ID
     })
+
 
 @csrf_exempt
 @login_required
 def confirmar_pago_paypal(request):
     if request.method == 'POST':
         order_id = request.POST.get('orderID')
+        if not order_id:
+            return JsonResponse({'ok': False, 'error': 'No orderID recibido'}, status=400)
 
-        # Obtener access token
+        # Obtener access token de PayPal
         auth_response = requests.post(
             'https://api-m.sandbox.paypal.com/v1/oauth2/token',
             auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_SECRET),
             data={'grant_type': 'client_credentials'}
         )
+        if auth_response.status_code != 200:
+            return JsonResponse({'ok': False, 'error': 'Error obteniendo access token'}, status=400)
+
         access_token = auth_response.json().get('access_token')
 
-        # Obtener detalles de orden
+        # Consultar la orden
         order_response = requests.get(
             f'https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}',
-            headers={
-                'Authorization': f'Bearer {access_token}',
-                'Content-Type': 'application/json'
-            }
+            headers={'Authorization': f'Bearer {access_token}'}
         )
         order_data = order_response.json()
 
-        if order_data.get('status') == 'COMPLETED':
-            amount = float(order_data['purchase_units'][0]['amount']['value'])
+        if order_response.status_code == 200 and order_data.get('status') == 'COMPLETED':
+            amount = Decimal(order_data['purchase_units'][0]['amount']['value'])
+            
+            # ✅ AÑADIR SALDO AL USUARIO
             request.user.saldo_virtual += amount
             request.user.save()
-            return JsonResponse({'ok': True, 'nuevo_saldo': request.user.saldo_virtual})
+
+            return JsonResponse({'ok': True, 'nuevo_saldo': str(request.user.saldo_virtual)})
         else:
-            return JsonResponse({'ok': False, 'error': 'Pago no completado'}, status=400)
+            return JsonResponse({'ok': False, 'error': 'Orden no completada o inválida'}, status=400)
+
     return JsonResponse({'ok': False, 'error': 'Método no permitido'}, status=405)
