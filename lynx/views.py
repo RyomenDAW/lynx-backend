@@ -1,4 +1,5 @@
 import base64
+import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from .forms import *
@@ -7,10 +8,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import Q
 
 # Create your views here.
 def inicio(request):
-    return render(request, 'inicio.html')
+    juegos_disponibles = list(Videojuego.objects.filter(disponible=True))
+    juegos_aleatorios = random.sample(juegos_disponibles, min(len(juegos_disponibles), 3))
+    return render(request, 'inicio.html', {'juegos_destacados': juegos_aleatorios})
 
 def registro_view(request):
     if request.method == 'POST':
@@ -512,30 +516,177 @@ def eliminar_usuario(request, id):
 
 
 
+#===========================================================================================================
 
-from django.db.models import Q
+# Vista para buscar coincidencias por nombre (20 máx)
+@login_required
+def buscar_juegos_steam(request):
+    if request.method == 'POST' and request.user.rol in ['ADMIN', 'DIST']:
+        nombre_juego = request.POST.get('nombre_juego', '').strip().lower()
+        lista_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+        respuesta = requests.get(lista_url)
+        if respuesta.status_code != 200:
+            messages.error(request, "Error al acceder al listado de Steam.")
+            return redirect('lista_videojuegos')
 
+        juegos = respuesta.json().get("applist", {}).get("apps", [])
+        from unicodedata import normalize, combining
+
+        def normalizar(texto):
+            texto = normalize("NFKD", texto.strip().lower())
+            return ''.join(c for c in texto if not combining(c)).replace("™", "").replace("®", "")
+
+        nombre_normalizado = normalizar(nombre_juego)
+        coincidencias = [j for j in juegos if nombre_normalizado in normalizar(j["name"])]
+        coincidencias = coincidencias[:20]
+
+        return render(request, 'videojuegos/seleccionar_steam.html', {
+            'coincidencias': coincidencias,
+            'nombre_original': nombre_juego
+        })
+    
+# Vista que importa por appid
+@login_required
+def importar_desde_steam_por_appid(request, appid):
+    if request.user.rol not in ['ADMIN', 'DIST']:
+        messages.error(request, "No tienes permisos.")
+        return redirect('lista_videojuegos')
+
+    url = f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=es&l=spanish"
+    respuesta = requests.get(url)
+    data = respuesta.json().get(str(appid), {}).get('data', {})
+
+    if not data:
+        messages.error(request, "No se pudo obtener la información del juego.")
+        return redirect('lista_videojuegos')
+
+    if Videojuego.objects.filter(titulo__iexact=data.get('name')).exists():
+        messages.warning(request, "Este juego ya existe.")
+        return redirect('lista_videojuegos')
+
+    videojuego = Videojuego(
+        titulo=data.get('name', 'Sin título'),
+        descripcion=data.get('short_description', 'Sin descripción'),
+        genero=', '.join([g['description'] for g in data.get('genres', [])]) if data.get('genres') else 'Desconocido',
+        desarrollador=data.get('developers', ['Desconocido'])[0],
+        distribuidor=data.get('publishers', ['Desconocido'])[0],
+        requisitos_minimos=data.get('pc_requirements', {}).get('minimum', 'No especificado'),
+        requisitos_recomendados=data.get('pc_requirements', {}).get('recommended', 'No especificado'),
+        soporte_mando=data.get('controller_support', None) is not None,
+        disponible=True
+    )
+
+    precio_raw = data.get('price_overview', {}).get('final')
+    videojuego.precio = precio_raw / 100 if precio_raw else 0.00
+
+    try:
+        fecha = datetime.strptime(data['release_date']['date'], '%d %b, %Y').date()
+    except:
+        fecha = datetime.today().date()
+    videojuego.fecha_lanzamiento = fecha
+
+    img_url = data.get('header_image')
+    if img_url:
+        r = requests.get(img_url)
+        if r.status_code == 200:
+            videojuego.set_imagen_portada_from_response(r)
+
+    videojuego.save()
+    messages.success(request, f'Juego "{videojuego.titulo}" importado.')
+    return redirect('lista_videojuegos')
+
+
+
+
+
+
+# ==============================
+# VER AMIGOS + BUSCAR USUARIOS
+# ==============================
 @login_required
 def ver_amigos(request):
     user = request.user
+
+    # Amigos confirmados
     amistades = Amistad.objects.filter(
         Q(solicitante=user) | Q(receptor=user),
         aceptada=True
     )
+    amigos = [a.receptor if a.solicitante == user else a.solicitante for a in amistades]
 
-    amigos = []
-    for amistad in amistades:
-        if amistad.solicitante == user:
-            amigos.append(amistad.receptor)
-        else:
-            amigos.append(amistad.solicitante)
+    # Solicitudes pendientes
+    solicitudes_recibidas = Amistad.objects.filter(receptor=user, aceptada=False)
 
-    return render(request, 'social/amigos.html', {'amigos': amigos})
+    # Resultados de búsqueda
+    resultados = []
+    if request.method == 'POST':
+        query = request.POST.get('query', '').strip()
+        if query:
+            resultados = Usuario.objects.filter(
+                Q(username__icontains=query) | Q(email__icontains=query)
+            ).exclude(id=user.id)
 
+    return render(request, 'social/amigos.html', {
+        'amigos': amigos,
+        'solicitudes_recibidas': solicitudes_recibidas,
+        'resultados': resultados
+    })
+
+
+# ==============================
+# ENVIAR SOLICITUD
+# ==============================
+@login_required
+def enviar_solicitud(request, id):
+    receptor = get_object_or_404(Usuario, id=id)
+    
+    if receptor == request.user:
+        messages.warning(request, "No puedes enviarte una solicitud a ti mismo.")
+        return redirect('ver_amigos')
+
+    existe = Amistad.objects.filter(
+        Q(solicitante=request.user, receptor=receptor) |
+        Q(solicitante=receptor, receptor=request.user)
+    ).exists()
+
+    if existe:
+        messages.warning(request, "Ya existe una solicitud o amistad con este usuario.")
+    else:
+        Amistad.objects.create(solicitante=request.user, receptor=receptor)
+        messages.success(request, f"Solicitud enviada a {receptor.username}.")
+
+    return redirect('ver_amigos')
+
+
+# ==============================
+# ACEPTAR SOLICITUD
+# ==============================
+@login_required
+def aceptar_solicitud(request, id):
+    solicitud = get_object_or_404(Amistad, id=id, receptor=request.user)
+    solicitud.aceptada = True
+    solicitud.save()
+    return redirect('ver_amigos')
+
+
+# ==============================
+# RECHAZAR SOLICITUD
+# ==============================
+@login_required
+def rechazar_solicitud(request, id):
+    solicitud = get_object_or_404(Amistad, id=id, receptor=request.user)
+    solicitud.delete()
+    return redirect('ver_amigos')
+
+
+# ==============================
+# ELIMINAR AMIGO
+# ==============================
 @login_required
 def eliminar_amigo(request, id):
     amigo = get_object_or_404(Usuario, pk=id)
     Amistad.objects.filter(
-        Q(solicitante=request.user, receptor=amigo) | Q(solicitante=amigo, receptor=request.user)
+        Q(solicitante=request.user, receptor=amigo) |
+        Q(solicitante=amigo, receptor=request.user)
     ).delete()
     return redirect('ver_amigos')

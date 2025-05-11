@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Red Social - Lynx</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/principal.css' %}">
+  <style>
+    body {
+      background-color: #121212;
+      font-family: 'Orbitron', sans-serif;
+      color: white;
+    }
+    .avatar-mini {
+      width: 48px; height: 48px; object-fit: cover;
+      border-radius: 50%; border: 2px solid cyan; box-shadow: 0 0 5px cyan;
+    }
+    .section-title {
+      margin-top: 30px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: cyan;
+    }
+    .btn-outline-warning, .btn-outline-danger, .btn-outline-info, .btn-outline-success {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+    }
+    input[type="text"] {
+      background-color: #f0f0f0 !important;
+      color: #000 !important;
+    }
+  </style>
+</head>
+<body>
+
+  {% include 'partials/navbar.html' %}
+
+  <div class="container-fluid mt-5 pt-4 px-4">
+
+    <div class="row">
+
+      <!-- AMIGOS -->
+      <div class="col-lg-8 mb-4">
+        <div class="card bg-dark border border-cyan shadow-sm px-4 pt-3 pb-2 h-100">
+          <h2 class="section-title">Mis Amigos</h2>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover text-center align-middle mb-0 w-100">
+              <thead class="text-cyan"><tr><th>Avatar</th><th>Nombre</th><th>Email</th><th>Reputación</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {% for amigo in amigos %}
+                <tr style="background-color: #1a1a1a;">
+                  <td>
+                    {% if amigo.avatar_base64 %}
+                    <img src="{{ amigo.avatar_base64 }}" class="avatar-mini">
+                    {% else %}
+                    <img src="{% static 'img/default-avatar.png' %}" class="avatar-mini">
+                    {% endif %}
+                  </td>
+                  <td>{{ amigo.username }}</td>
+                  <td>{{ amigo.email }}</td>
+                  <td>{{ amigo.reputacion }}</td>
+                  <td>
+                    <form method="post" action="{% url 'eliminar_amigo' amigo.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                    </form>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-info">No tienes amigos todavía.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUSCAR USUARIO -->
+      <div class="col-lg-4 mb-4">
+        <div class="card bg-dark border border-cyan shadow-sm p-3 h-100">
+          <h2 class="section-title">Buscar usuario</h2>
+          <form method="post" action="{% url 'ver_amigos' %}" class="d-flex mb-3 gap-2">
+            {% csrf_token %}
+            <input type="text" name="query" placeholder="Buscar por nombre o email" class="form-control text-dark bg-light">
+            <button type="submit" class="btn btn-outline-info">Buscar</button>
+          </form>
+
+          {% if resultados %}
+          <table class="table table-dark table-bordered text-center align-middle">
+            <thead class="text-cyan"><tr><th>Avatar</th><th>Nombre</th><th>Acción</th></tr></thead>
+            <tbody>
+              {% for r in resultados %}
+              <tr>
+                <td>
+                  {% if r.avatar_base64 %}
+                  <img src="{{ r.avatar_base64 }}" class="avatar-mini">
+                  {% else %}
+                  <img src="{% static 'img/default-avatar.png' %}" class="avatar-mini">
+                  {% endif %}
+                </td>
+                <td>{{ r.username }}</td>
+                <td>
+                  <form method="post" action="{% url 'enviar_solicitud' r.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-warning btn-sm">Enviar solicitud</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SOLICITUDES ABAJO -->
+    {% if solicitudes_recibidas %}
+    <h2 class="section-title">Solicitudes recibidas</h2>
+    <div class="card bg-dark border border-cyan shadow-sm p-3 mb-5">
+      <div class="table-responsive">
+        <table class="table table-dark table-bordered text-center">
+          <thead class="text-cyan"><tr><th>De</th><th>Acciones</th></tr></thead>
+          <tbody>
+            {% for s in solicitudes_recibidas %}
+            <tr>
+              <td>{{ s.solicitante.username }}</td>
+              <td>
+                <a href="{% url 'aceptar_amistad' s.id %}" class="btn btn-outline-success btn-sm me-2">Aceptar</a>
+                <a href="{% url 'rechazar_amistad' s.id %}" class="btn btn-outline-danger btn-sm">Rechazar</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

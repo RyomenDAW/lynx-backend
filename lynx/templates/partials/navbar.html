@@ -1,45 +1,80 @@
 {% load static %}
-<nav class="navbar navbar-expand-lg fixed-top navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-cyan" href="/">Lynx Store</a>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lynxNavbar" aria-controls="lynxNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-black border-bottom border-cyan shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold text-cyan" href="/">Lynx Store</a>
 
-        <div class="collapse navbar-collapse justify-content-between" id="lynxNavbar">
-            {% if user.is_authenticated %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item"><a class="nav-link" href="/biblioteca">Biblioteca</a></li>
-                <li class="nav-item"><a class="nav-link" href="/videojuegos">Tienda</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Inventario</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'perfil_usuario' %}">Social</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'lista_codigos' %}">Códigos Promocionales</a></li>
-            </ul>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lynxNavbar"
+      aria-controls="lynxNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-            <div class="d-flex align-items-center gap-2 text-light">
-                {% if user.avatar_base64 %}
-                    <img src="{{ user.avatar_base64 }}" alt="Avatar" class="rounded-circle" style="width: 70px; height: 70px; object-fit: cover; border: 2px solid cyan;">
-                {% else %}
-                    <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover; border: 2px solid cyan;">
-                {% endif %}
-                
-                <div class="text-end">
-                    <span><strong>{{ user.username }}</strong></span><br>
-                    <small class="text-cyan">💰 {{ user.saldo_virtual }} €</small>
-                </div>
+    <div class="collapse navbar-collapse" id="lynxNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        {% if user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link text-cyan" href="/biblioteca">Biblioteca</a></li>
+        <li class="nav-item"><a class="nav-link text-cyan" href="/videojuegos">Tienda</a></li>
+        <li class="nav-item"><a class="nav-link text-cyan" href="#">Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-cyan" href="{% url 'perfil_usuario' %}">Perfil</a></li>
+        <li class="nav-item"><a class="nav-link text-cyan" href="{% url 'ver_amigos' %}">Social</a></li>
+        <li class="nav-item"><a class="nav-link text-cyan" href="{% url 'lista_codigos' %}">Códigos Promocionales</a></li>
+        {% endif %}
+      </ul>
 
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-                </form>
-            </div>
-            {% else %}
-            <div class="d-flex gap-2">
-                <a href="{% url 'login' %}" class="btn btn-outline-info btn-sm">Login</a>
-                <a href="{% url 'registro' %}" class="btn btn-outline-light btn-sm">Registrarse</a>
-            </div>
-            {% endif %}
+      {% if user.is_authenticated %}
+      <!-- BLOQUE DE USUARIO LOGUEADO -->
+      <div class="d-flex align-items-center text-light gap-3 ms-auto">
+
+        <!-- AVATAR -->
+        <div>
+          {% if user.avatar_base64 %}
+          <img src="{{ user.avatar_base64 }}" alt="Avatar" class="rounded-circle"
+            style="width: 60px; height: 60px; object-fit: cover; border: 2px solid cyan;">
+          {% else %}
+          <img src="{% static 'img/default-avatar.png' %}" alt="Avatar" class="rounded-circle"
+            style="width: 60px; height: 60px; object-fit: cover; border: 2px solid cyan;">
+          {% endif %}
         </div>
+
+        <!-- INFO USUARIO -->
+        <div class="text-end">
+          <div class="text-white small fw-bold">Bienvenido, {{ user.username }}</div>
+          <div class="text-cyan small">💰 {{ user.saldo_virtual|stringformat:"0.2f" }} €</div>
+          <span class="badge bg-info text-dark mt-1" style="font-size: 0.7rem;">RANGO: {{ user.get_rol_display }}</span>
+        </div>
+
+        <!-- LOGOUT -->
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+        </form>
+      </div>
+      {% else %}
+      <!-- BLOQUE DE LOGIN / REGISTRO -->
+      <div class="d-flex ms-auto gap-2">
+        <a href="{% url 'login' %}" class="btn btn-outline-cyan btn-sm">Login</a>
+        <a href="{% url 'registro' %}" class="btn btn-cyan btn-sm text-dark fw-bold">Registrarse</a>
+      </div>
+      {% endif %}
     </div>
+  </div>
 </nav>
+
+<style>
+  .btn-cyan {
+    background-color: cyan;
+    border: 1px solid cyan;
+  }
+
+  .btn-outline-cyan {
+    color: cyan;
+    border: 1px solid cyan;
+  }
+
+  .btn-cyan:hover,
+  .btn-outline-cyan:hover {
+    background-color: #00ffffcc;
+    color: black;
+  }
+</style>
