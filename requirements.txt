@@ -1,4 +1,6 @@
 Django~=5.1.1
 requests
 django-environ>=0.11.2
+djangorestframework
+djangorestframework-simplejwt
 
