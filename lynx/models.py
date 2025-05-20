@@ -166,7 +166,7 @@ class TransaccionItem(models.Model):
 #=================================================================
 class CodigoPromocional(models.Model):
     codigo_texto = models.CharField(max_length=50, unique=True)
-    descripcion = models.TextField()
+    descripcion = models.TextField(blank=True, null=True)
 
     videojuego = models.ForeignKey(Videojuego, on_delete=models.SET_NULL, null=True, blank=True)
     saldo_extra = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
@@ -188,10 +188,16 @@ class CodigoPromocional(models.Model):
 
 
 class Amistad(models.Model):
+
+    class EstadoChoices(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', 'Pendiente'
+        ACEPTADA = 'ACEPTADA', 'Aceptada'
+
     solicitante = models.ForeignKey(Usuario, related_name='amistades_enviadas', on_delete=models.CASCADE)
     receptor = models.ForeignKey(Usuario, related_name='amistades_recibidas', on_delete=models.CASCADE)
     aceptada = models.BooleanField(default=False)
     fecha = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=10, choices=EstadoChoices.choices, default=EstadoChoices.PENDIENTE)  # ✅ CAMPO NECESARIO
 
     class Meta:
         unique_together = ('solicitante', 'receptor')

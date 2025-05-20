@@ -26,6 +26,15 @@ class CodigoPromocionalViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(), CustomIsAdminOrDist()]
         return [permissions.IsAuthenticated()]
 
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print('Errores de validación al crear código:', serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     #=============================================================
     # Acción personalizada para canjear código (POST /api/codigos/canjear/)
     #=============================================================

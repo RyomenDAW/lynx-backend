@@ -5,10 +5,18 @@ from .models import Usuario, Videojuego, Biblioteca, Reseña, Item, TransaccionI
 # SERIALIZER USUARIO
 #=================================================================
 class UsuarioSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()  # 👈 AÑADIDO
+
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'rol', 'saldo_virtual', 'reputacion', 'avatar_base64', 'verificado']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'rol', 'saldo_virtual', 'reputacion', 'avatar_base64',
+            'verificado', 'nombre_completo'  # 👈 INCLUIDO
+        ]
 
+    def get_nombre_completo(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
 
 #=================================================================
 # SERIALIZER VIDEOJUEGO
@@ -71,12 +79,24 @@ class TransaccionItemSerializer(serializers.ModelSerializer):
 # SERIALIZER CODIGO PROMOCIONAL
 #=================================================================
 class CodigoPromocionalSerializer(serializers.ModelSerializer):
+    # Mantén el serializer para lectura:
     videojuego = VideojuegoSerializer(read_only=True)
+    videojuego_id = serializers.PrimaryKeyRelatedField(
+        queryset=Videojuego.objects.all(),
+        source='videojuego',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
     usuario_ultimo = UsuarioSerializer(read_only=True)
 
     class Meta:
         model = CodigoPromocional
-        fields = '__all__'
+        fields = [
+            'id', 'codigo_texto', 'descripcion', 'videojuego', 'videojuego_id', 
+            'saldo_extra', 'usos_totales', 'usos_actuales', 'usado', 
+            'fecha_expiracion', 'usuario_ultimo'
+        ]
 
 
 #=================================================================
@@ -89,3 +109,17 @@ class AmistadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Amistad
         fields = '__all__'
+
+
+
+
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username
+        token['rol'] = user.rol  # ACCESO DIRECTO, ES CHARFIELD
+        return token

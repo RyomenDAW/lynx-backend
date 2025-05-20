@@ -1,109 +1,83 @@
-# social_api.py
-
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from lynx.models import Amistad, Usuario
 from lynx.serializers import AmistadSerializer, UsuarioSerializer
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-#=================================================================
-# VIEWSET SOCIAL / AMIGOS / SOLICITUDES
-#=================================================================
-class SocialViewSet(viewsets.ViewSet):
-    """
-    ViewSet para gestionar amigos, solicitudes, rechazos.
-    """
-    permission_classes = [IsAuthenticated]
+class SocialViewSet(viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
 
-    #=============================================================
-    # Listar amigos confirmados
-    #=============================================================
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='amigos')
     def amigos(self, request):
-        user = request.user
+        usuario = request.user
         amistades = Amistad.objects.filter(
-            Q(solicitante=user) | Q(receptor=user),
-            aceptada=True
+            Q(solicitante=usuario) | Q(receptor=usuario),
+            estado='ACEPTADA'
         )
-        amigos = [a.receptor if a.solicitante == user else a.solicitante for a in amistades]
+        amigos = [
+            a.receptor if a.solicitante == usuario else a.solicitante
+            for a in amistades
+        ]
         serializer = UsuarioSerializer(amigos, many=True)
         return Response(serializer.data)
 
-    #=============================================================
-    # Listar solicitudes recibidas
-    #=============================================================
-    @action(detail=False, methods=['get'])
-    def solicitudes_recibidas(self, request):
-        solicitudes = Amistad.objects.filter(receptor=request.user, aceptada=False)
+    @action(detail=False, methods=['get'], url_path='solicitudes')
+    def solicitudes(self, request):
+        solicitudes = Amistad.objects.filter(
+            receptor=request.user,
+            estado='PENDIENTE'
+        )
         serializer = AmistadSerializer(solicitudes, many=True)
         return Response(serializer.data)
 
-    #=============================================================
-    # Buscar usuarios por nombre o email
-    #=============================================================
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='buscar')
     def buscar(self, request):
-        query = request.query_params.get('query', '')
+        query = request.GET.get('q', '')
         if not query:
-            return Response([], status=status.HTTP_200_OK)
-
-        resultados = Usuario.objects.filter(
-            Q(username__icontains=query) | Q(email__icontains=query)
-        ).exclude(id=request.user.id)
-
-        serializer = UsuarioSerializer(resultados, many=True)
+            return Response([])
+        usuarios = Usuario.objects.filter(username__icontains=query).exclude(id=request.user.id)
+        serializer = UsuarioSerializer(usuarios, many=True)
         return Response(serializer.data)
 
-    #=============================================================
-    # Enviar solicitud de amistad
-    #=============================================================
-    @action(detail=False, methods=['post'])
-    def enviar_solicitud(self, request):
+    @action(detail=False, methods=['post'], url_path='solicitar')
+    def solicitar(self, request):
         receptor_id = request.data.get('receptor_id')
-        receptor = get_object_or_404(Usuario, id=receptor_id)
+        receptor = Usuario.objects.filter(id=receptor_id).first()
+        if not receptor:
+            return Response({'error': 'Usuario no encontrado'}, status=404)
+        if Amistad.objects.filter(solicitante=request.user, receptor=receptor).exists():
+            return Response({'error': 'Ya has enviado solicitud'}, status=400)
 
-        if receptor == request.user:
-            return Response({'error': 'No puedes enviarte una solicitud a ti mismo.'}, status=status.HTTP_400_BAD_REQUEST)
+        amistad = Amistad.objects.create(solicitante=request.user, receptor=receptor, estado='PENDIENTE')
+        return Response({'ok': True, 'id': amistad.id})
 
-        if Amistad.objects.filter(
-            Q(solicitante=request.user, receptor=receptor) |
-            Q(solicitante=receptor, receptor=request.user)
-        ).exists():
-            return Response({'error': 'Ya existe una solicitud o amistad.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        Amistad.objects.create(solicitante=request.user, receptor=receptor)
-        return Response({'ok': True, 'mensaje': 'Solicitud enviada.'})
-
-    #=============================================================
-    # Aceptar solicitud
-    #=============================================================
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='aceptar')
     def aceptar(self, request, pk=None):
-        solicitud = get_object_or_404(Amistad, id=pk, receptor=request.user)
-        solicitud.aceptada = True
-        solicitud.save()
-        return Response({'ok': True, 'mensaje': 'Solicitud aceptada.'})
+        amistad = Amistad.objects.filter(id=pk, receptor=request.user, estado='PENDIENTE').first()
+        if not amistad:
+            return Response({'error': 'Solicitud no válida'}, status=400)
+        amistad.estado = 'ACEPTADA'
+        amistad.save()
+        return Response({'ok': True})
 
-    #=============================================================
-    # Rechazar solicitud
-    #=============================================================
-    @action(detail=True, methods=['post'])
+
+    @action(detail=True, methods=['post'], url_path='rechazar')
     def rechazar(self, request, pk=None):
-        solicitud = get_object_or_404(Amistad, id=pk, receptor=request.user)
-        solicitud.delete()
-        return Response({'ok': True, 'mensaje': 'Solicitud rechazada.'})
+        amistad = Amistad.objects.filter(id=pk, receptor=request.user, estado='PENDIENTE').first()
+        if not amistad:
+            return Response({'error': 'Solicitud no válida'}, status=400)
+        amistad.delete()
+        return Response({'ok': True})
 
-    #=============================================================
-    # Eliminar amigo
-    #=============================================================
-    @action(detail=True, methods=['post'])
-    def eliminar(self, request, pk=None):
-        amigo = get_object_or_404(Usuario, pk=pk)
-        Amistad.objects.filter(
-            Q(solicitante=request.user, receptor=amigo) |
-            Q(solicitante=amigo, receptor=request.user)
-        ).delete()
-        return Response({'ok': True, 'mensaje': 'Amigo eliminado.'})
+
+    def destroy(self, request, pk=None):
+        amistad = Amistad.objects.filter(
+            Q(solicitante=request.user, receptor__id=pk) |
+            Q(receptor=request.user, solicitante__id=pk),
+            estado='ACEPTADA'
+        ).first()
+        if not amistad:
+            return Response({'error': 'Amistad no encontrada'}, status=404)
+        amistad.delete()
+        return Response({'ok': True})

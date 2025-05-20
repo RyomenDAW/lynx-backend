@@ -10,21 +10,19 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 #=================================================================
 # VIEWSET VIDEOJUEGO (CRUD COMPLETO)
 #=================================================================
+
 class VideojuegoViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar videojuegos (CRUD).
-    - Listar, crear, editar, eliminar.
-    - Usuarios normales pueden ver.
-    - Solo ADMIN o DISTR pueden crear, editar, eliminar.
-    """
     queryset = Videojuego.objects.all()
     serializer_class = VideojuegoSerializer
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated(), CustomIsAdminOrDist()]
-        return [permissions.AllowAny()]  # Cualquiera puede ver juegos
+        return [permissions.AllowAny()]
 
+    def create(self, request, *args, **kwargs):
+        print("📦 DATOS RECIBIDOS EN EL BACKEND:", request.data.get("imagen_portada_base64")[:100])  # Primeros 100 chars
+        return super().create(request, *args, **kwargs)
 
 #=================================================================
 # PERMISOS PERSONALIZADOS PARA ADMIN Y DIST SOLO EN MODIFICACIÓN

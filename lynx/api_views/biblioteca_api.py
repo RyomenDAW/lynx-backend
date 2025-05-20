@@ -35,6 +35,11 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         if Biblioteca.objects.filter(usuario=request.user, juego=juego).exists():
             return Response({'error': 'Ya posees este juego.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Restar saldo
+        request.user.saldo_virtual -= juego.precio
+        request.user.save()
+
+        
         Biblioteca.objects.create(usuario=request.user, juego=juego)
         return Response({'ok': True, 'mensaje': 'Juego añadido a la biblioteca.'})
 
@@ -47,3 +52,18 @@ class BibliotecaViewSet(viewsets.ModelViewSet):
         registro.favorito = not registro.favorito
         registro.save()
         return Response({'ok': True, 'favorito': registro.favorito})
+
+
+    # PATCH /api/biblioteca/{id}/tiempo/
+    @action(detail=True, methods=['patch'])
+    def tiempo(self, request, pk=None):
+        registro = get_object_or_404(Biblioteca, id=pk, usuario=request.user)
+        minutos = request.data.get('minutos', 0)
+        try:
+            minutos = int(minutos)
+        except:
+            return Response({'error': 'Minutos inválidos.'}, status=400)
+
+        registro.tiempo_jugado = minutos
+        registro.save()
+        return Response({'ok': True, 'tiempo_jugado': registro.tiempo_jugado})
