@@ -40,7 +40,7 @@ SECRET_KEY = 'django-insecure-1(o$1164m6hd4frdm^_7zp!t)ticfan!53n$d@b+!tfa#tj3pl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 
 # Application definition
@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     'lynx',
     'rest_framework',
     'corsheaders',
-        'django_extensions',
+    'django_extensions',
 
 ]
 
@@ -70,9 +70,15 @@ REST_FRAMEWORK = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
+    "http://localhost:4200",  # Local en desarrollo
+    "http://127.0.0.1:4200",  # Local en desarrollo
+    "http://localhost",  # Cualquier origen de localhost
+    "http://127.0.0.1",  # 127.0.0.1 para conexiones internas
+    "http://<tu_dominio>",  # Si es un dominio en producción
+    "http://0.0.0.0:8000",  # Dirección del contenedor backend
+    "http://localhost:8000"  # O cualquier puerto y dirección pública de producción
 ]
+
 
 
 # OPCIONAL: Configuración de duración tokens
@@ -89,6 +95,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # 🔵 PRIMERO
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Añádelo aquí
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
 
@@ -158,7 +165,7 @@ AUTH_PASSWORD_VALIDATORS = [
 TIME_ZONE ='Europe/Madrid'
 LANGUAGE_CODE = 'es'
 STATIC_URL = '/static/'
-ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com','0.0.0.0']
+ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com','0.0.0.0', 'localhost']
 USE_TZ = False
 
 USE_I18N = True
@@ -174,14 +181,15 @@ import os
 
 # MODO DESARROLLO
 STATIC_URL = '/static/'
-
+# Directorio donde collectstatic guardará los archivos
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "lynx" / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_DIRS = [BASE_DIR / "lynx" / "static"]
 LOGOUT_REDIRECT_URL = '/'
 
 
