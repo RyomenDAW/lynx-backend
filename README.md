@@ -1,118 +1,212 @@
-# 🕹️ LYNX - Plataforma de Compra y Gestión de Videojuegos
+LYNX - Dockerización y Despliegue en AWS
+Descripción
+Este proyecto involucra la implementación y despliegue de una plataforma de gestión de videojuegos llamada LYNX, desarrollada con Angular (frontend) y Django (backend). El proyecto ha sido dockerizado para facilitar su despliegue y ejecución en contenedores, y se ha configurado para ser desplegado en una instancia de AWS.
 
-**Repositorio:** [https://github.com/RyomenDAW/lynx-backend](https://github.com/RyomenDAW/lynx-backend)
+Requisitos Previos
+Antes de comenzar, asegúrate de tener los siguientes programas y herramientas instaladas:
 
-**Versión actual:** v0.95  
-**Backend:** Django 5.1 + Python 3.10  
-**Frontend:** Bootstrap 5 + Orbitron / Rajdhani
+1. Instalar Docker y Docker Compose en Ubuntu
+Si no tienes Docker instalado en tu sistema, sigue estos pasos para instalarlo:
 
----
+Actualizar el sistema:
 
-## 📦 Tecnologías
+bash
+Copy
+sudo apt-get update
+Instalar Docker:
 
-- **Python 3.10** / **Django 5.1**
-- **SQLite3** (modo local) o **MySQL** (para producción)
-- **Bootstrap 5** + **Orbitron/Rajdhani**
-- **Docker** para contenedores (opcional en local)
-- **Deploy previsto en AWS EC2**
+bash
+Copy
+sudo apt-get install docker.io -y
+Iniciar y habilitar Docker para que se inicie al arranque:
 
----
+bash
+Copy
+sudo systemctl enable --now docker
+Verificar que Docker esté correctamente instalado:
 
-##  Instalación Manual en Ubuntu
+bash
+Copy
+sudo docker --version
+2. Instalar Docker Compose
+Instalar Docker Compose:
 
-### 1. Clonar el proyecto
-```bash
+bash
+Copy
+sudo apt-get install -y python3-pip
+sudo pip3 install docker-compose
+Verificar la instalación de Docker Compose:
+
+bash
+Copy
+docker-compose --version
+3. Instalar Python y Pip
+Si no tienes Python instalado, sigue estos pasos:
+
+Instalar Python 3.10:
+
+bash
+Copy
+sudo apt-get install python3.10 -y
+Instalar pip para Python 3:
+
+bash
+Copy
+sudo apt-get install python3-pip -y
+Verificar que Python y pip estén correctamente instalados:
+
+bash
+Copy
+python3 --version
+pip3 --version
+4. Clonar los Repositorios
+Clonar el repositorio del backend:
+
+bash
+Copy
 git clone https://github.com/RyomenDAW/lynx-backend.git
 cd lynx-backend
-```
+Clonar el repositorio del frontend:
 
-### 2. Crear entorno virtual
-```bash
-sudo apt-get install python3-venv  # Si no está instalado
-python3 -m venv myvenv
-source myvenv/bin/activate
-```
+bash
+Copy
+git clone https://github.com/RyomenDAW/lynx-frontend.git
+cd lynx-frontend
+Configuración de Docker
+1. Crear el archivo Docker Compose
+Asegúrate de que el archivo docker-compose.yml esté en la carpeta raíz del proyecto (por ejemplo, en ~/Desktop/lynx/).
 
-### 3. Instalar dependencias
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+Contenido de docker-compose.yml:
+yaml
+Copy
+version: '3.8'
 
-### 4. Migrar la base de datos
-```bash
-python manage.py migrate
-```
+services:
+  backend:
+    build:
+      context: ./lynx-backend
+    container_name: lynx-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=mysite.settings
+    volumes:
+      - ./lynx-backend:/app
+    restart: unless-stopped
 
-### 5. Crear superusuario (opcional, para Django admin)
-```bash
-python manage.py createsuperuser
-```
+  frontend:
+    build:
+      context: ./lynx-frontend
+    container_name: lynx-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+Este archivo define los servicios para el frontend y el backend.
 
-### 6. Lanzar el servidor local
-```bash
-python manage.py runserver 0.0.0.0:8080
-```
+2. Dockerfiles
+Dockerfile para el frontend:
+dockerfile
+Copy
+# Dockerfile para frontend Angular
 
-### 7. Acceder a la aplicación
-[http://127.0.0.1:8080](http://127.0.0.1:8080)
+# Etapa de construcción
+FROM node:18-alpine as build
 
----
+WORKDIR /app
 
-## 🐳 Despliegue en Docker
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build --prod
 
-### Dockerfile (base Ubuntu)
-```dockerfile
-FROM ubuntu:22.04
+# Etapa para servir con nginx
+FROM nginx:alpine
+COPY --from=build /app/dist/lynx-app /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN apt update && apt install -y python3 python3-pip python3-venv git
+# Exponer puerto 80
+EXPOSE 80
 
-WORKDIR /lynx
-COPY . /lynx
+CMD ["nginx", "-g", "daemon off;"]
+Dockerfile para el backend:
+dockerfile
+Copy
+# Dockerfile para backend Django
 
-RUN python3 -m venv myvenv
-RUN /lynx/myvenv/bin/pip install --upgrade pip
-RUN /lynx/myvenv/bin/pip install -r requirements.txt
+FROM python:3.10-slim
 
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+WORKDIR /app
+
+COPY requirements.txt /app/
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+COPY . /app/
+
+# Exponer puerto 8000
 EXPOSE 8000
 
-CMD ["/lynx/myvenv/bin/python", "manage.py", "runserver", "0.0.0.0:8000"]
-```
+# Ejecutar Gunicorn para producción
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "mysite.wsgi:application"]
+Construcción y Ejecución de los Contenedores
+Una vez que hayas configurado los Dockerfiles y el archivo docker-compose.yml, procede a construir y ejecutar los contenedores de la siguiente manera:
 
-### Comandos para ejecución
-```bash
-docker build -t lynx .
-docker run -p 8000:8000 lynx
-```
+1. Construir los contenedores
+Construir los contenedores sin caché:
 
----
+bash
+Copy
+sudo docker-compose build --no-cache
+Levantar los contenedores:
 
-## 🔐 Permisos
+bash
+Copy
+sudo docker-compose up
+2. Verificar que todo está funcionando
+Una vez que los contenedores estén en ejecución, podrás acceder al frontend a través de la IP pública de tu instancia de AWS en el puerto 80, y al backend en el puerto 8000.
 
-| Rol             | Puede Ver Juegos | Comprar | Canjear Códigos | Crear Juegos | Crear Códigos | Acceso Admin |
-|----------------|------------------|---------|------------------|--------------|---------------|--------------|
-| Usuario         | ✅               | ✅      | ✅               | ❌           | ❌            | ❌           |
-| Moderador/Admin | ✅               | ✅      | ✅               | ✅           | ✅            | ✅           |
+Despliegue en AWS
+Para desplegar la aplicación en AWS EC2, sigue estos pasos:
 
----
+1. Crear las instancias EC2
+Crea dos instancias EC2 (una para el frontend y otra para el backend).
 
-## 🎮 Funcionalidades Disponibles
+Asegúrate de que ambas instancias estén en la misma VPC y tengan configurados los grupos de seguridad para permitir la comunicación entre ellas.
 
-- ✅ Registro y login de usuarios
-- ✅ Biblioteca de juegos con favoritos y tiempo jugado
-- ✅ Tienda de videojuegos con CRUD y compra
-- ✅ Sistema de reseñas con puntuación y comentario
-- ✅ Códigos promocionales: entrega de saldo o juegos
-- ✅ Roles y permisos definidos
-- ✅ Sistema de canjeo de códigos
-- ✅ Perfil de usuario con saldo y reputación (esto ultimo hay que trabajarlo en la siguiente version)
+Asigna Elastic IPs a las instancias para que puedan ser accesibles desde internet.
 
----
+2. Subir los archivos a las instancias EC2
+Usa scp o cualquier otra herramienta para subir los archivos de frontend y backend a las instancias correspondientes.
 
-## 📅 Hitos del Proyecto
+3. Instalar Docker y Docker Compose en las instancias EC2
+Instalar Docker en la instancia EC2:
 
-- Hito 1: Estructura inicial, modelos, templates.
-- Hito 2: Versión funcional v0.25 (estado actual).
-- Hito 3: Integraciones externas, mejoras visuales y despliegue completo.
+bash
+Copy
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo systemctl enable --now docker
+Instalar Docker Compose:
 
----
+bash
+Copy
+sudo apt-get install -y python3-pip
+sudo pip3 install docker-compose
+4. Subir el código al servidor
+Sube las carpetas lynx-backend y lynx-frontend a las instancias EC2.
+
+5. Ejecutar Docker Compose en las instancias EC2
+En cada instancia EC2, navega a la carpeta donde subiste los archivos y ejecuta:
+
+bash
+Copy
+sudo docker-compose up --build
+Esto construirá y levantará ambos contenedores (frontend y backend) en sus respectivas instancias.
+
+Notas Adicionales
+Problema de CORS: Si estás teniendo problemas con CORS, asegúrate de tener configurado correctamente el middleware de CORS en settings.py de Django. Si estás trabajando en un entorno local o en diferentes instancias, añade las direcciones IP correspondientes a CORS_ALLOWED_ORIGINS en tu configuración.
+
+Probar la API: Accede a la API en el puerto 8000 de la instancia backend para probar las funcionalidades.
