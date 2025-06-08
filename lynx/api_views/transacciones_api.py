@@ -1,47 +1,36 @@
-# transacciones_api.py
+# lynx/api_views/transacciones_api.py
 
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
-from lynx.models import TransaccionItem, Item
+from rest_framework import viewsets, permissions
+from lynx.models import TransaccionItem
 from lynx.serializers import TransaccionItemSerializer
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 #=================================================================
-# VIEWSET TRANSACCIONES DE ÍTEMS ENTRE USUARIOS
+# PERMISO PERSONALIZADO → SOLO ADMIN
 #=================================================================
-class TransaccionItemViewSet(viewsets.ModelViewSet):
+class IsAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.rol == 'ADMIN'
+
+#=================================================================
+# VIEWSET TRANSACCIONES DE ÍTEMS
+#=================================================================
+class TransaccionItemViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet para gestionar transacciones de items entre usuarios.
-    - Listar, ver detalle.
-    - Crear transacción (VENTA).
-    - Solo el vendedor o comprador pueden ver la transacción.
+    ViewSet para ver transacciones de ítems:
+    - LOS USUARIOS VEN SUS PROPIAS (COMPRADOR O VENDEDOR).
+    - ADMIN VE TODAS.
     """
     serializer_class = TransaccionItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        return TransaccionItem.objects.filter(
-            vendedor=user
-        ) | TransaccionItem.objects.filter(
-            comprador=user
-        )
-
-    def perform_create(self, serializer):
-        item_id = self.request.data.get('item')
-        precio = self.request.data.get('precio')
-        tipo_transaccion = self.request.data.get('tipo_transaccion')
-
-        item = get_object_or_404(Item, id=item_id)
-        comprador = self.request.user
-
-        # Validación básica (puedes añadir más reglas según tu lógica)
-        if not precio or float(precio) <= 0:
-            raise ValueError("Precio inválido.")
-
-        vendedor = item.juego.desarrollador if item.juego else None  # Aquí puedes definir la lógica de vendedor real si tienes control de ownership
-        if not vendedor:
-            raise ValueError("No se puede determinar el vendedor.")
-
-        serializer.save(vendedor=vendedor, comprador=comprador, item=item, tipo_transaccion=tipo_transaccion)
+        if user.rol == 'ADMIN':
+            return TransaccionItem.objects.all()
+        else:
+            return TransaccionItem.objects.filter(
+                vendedor=user
+            ) | TransaccionItem.objects.filter(
+                comprador=user
+            )

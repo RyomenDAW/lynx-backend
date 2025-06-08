@@ -1,5 +1,3 @@
-# api_urls.py
-
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
@@ -13,8 +11,10 @@ from lynx.api_views.reseñas_api import ReseñaViewSet
 from lynx.api_views.social_api import SocialViewSet
 from lynx.api_views.transacciones_api import TransaccionItemViewSet
 from lynx.api_views.fondos_api import CrearOrdenFondosAPIView, ConfirmarPagoPaypalAPIView
+from lynx.api_views.marketplace_api import MarketplaceViewSet
+from lynx.api_views.inventario_api import InventarioItemViewSet
+from lynx.api_views.marketplace_venta_api import PonerEnVentaViewSet  # ✅ SOLO ESTO
 
-# 🔹 AÑADE ESTO BIEN:
 from lynx.api_views.steam_api import BuscarSteamAPIView, DetallesSteamAPIView
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -28,6 +28,9 @@ router.register(r'items', ItemViewSet, basename='item')
 router.register(r'reseñas', ReseñaViewSet, basename='reseña')
 router.register(r'social', SocialViewSet, basename='social')
 router.register(r'transacciones', TransaccionItemViewSet, basename='transaccion')
+router.register(r'marketplace', MarketplaceViewSet, basename='marketplace')
+router.register(r'inventario', InventarioItemViewSet, basename='inventario')
+router.register(r'marketplace-venta', PonerEnVentaViewSet, basename='marketplace-venta')  # ✅ CORRECTO
 
 urlpatterns = router.urls + [
     path('register/', RegisterView.as_view(), name='api-register'),
@@ -35,8 +38,6 @@ urlpatterns = router.urls + [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('fondos/crear/', CrearOrdenFondosAPIView.as_view(), name='crear_orden_fondos'),
     path('fondos/confirmar/', ConfirmarPagoPaypalAPIView.as_view(), name='confirmar_pago_paypal'),
-
-    # ✅ AÑADE ESTAS DOS
     path('steam-search/', BuscarSteamAPIView.as_view(), name='steam-search'),
-    path('steam-details/', DetallesSteamAPIView.as_view(), name='steam-details'),  # <-- ESTA TE FALTA
+    path('steam-details/', DetallesSteamAPIView.as_view(), name='steam-details'),
 ]

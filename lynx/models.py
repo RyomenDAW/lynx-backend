@@ -121,8 +121,9 @@ class Reseña(models.Model):
         return f"{self.usuario} → {self.juego}"
 
 #=================================================================
-# ÍTEMS VIRTUALES RELACIONADOS O NO CON UN VIDEOJUEGO
+# ÍTEMS VIRTUALES (MOLDE), SOLO ADMIN LOS CREA
 #=================================================================
+
 class Item(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
@@ -137,30 +138,61 @@ class Item(models.Model):
     def __str__(self):
         return self.nombre
 
-    # MÉTODO PARA GUARDAR LA IMAGEN
     def set_imagen_from_file(self, file):
+        import base64
         self.imagen_base64 = "data:image/jpeg;base64," + base64.b64encode(file.read()).decode()
 
+
 #=================================================================
-# TRANSACCIONES ENTRE USUARIOS CON ÍTEMS
+# INVENTARIO DE ÍTEMS DE LOS USUARIOS
 #=================================================================
+
+class InventarioItem(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    fecha_adquisicion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'item')  # Un registro por item/usuario
+
+    def __str__(self):
+        return f"{self.usuario} posee {self.cantidad} x {self.item}"
+    
+
+
+
+#=================================================================
+# ÍTEM EN VENTA (MARKETPLACE)
+#=================================================================
+
+class ItemEnVenta(models.Model):
+    vendedor = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.item} en venta por {self.vendedor} a {self.precio} €"
+
+
+
+#=================================================================
+# TRANSACCIONES ENTRE USUARIOS CON ÍTEMS (HISTÓRICO)
+#=================================================================
+
 class TransaccionItem(models.Model):
-    vendedor = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='ventas')
+    vendedor = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='ventas', null=True, blank=True)
     comprador = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='compras')
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_transaccion = models.DateTimeField(auto_now_add=True)
-    tipo_transaccion = models.CharField(max_length=50)  # EJEMPLO: 'VENTA', 'INTERCAMBIO'
-
-    # UN ITEM PUEDE HABERSE VENDIDO VARIAS VECES
-    # UN USUARIO PUEDE COMPRAR Y VENDER MUCHOS ITEMS
+    tipo_transaccion = models.CharField(max_length=50)  # EJEMPLO: 'VENTA', 'ASIGNACION_ADMIN'
 
     def __str__(self):
-        return f"{self.vendedor} → {self.comprador} ({self.item})"
+        return f"{self.vendedor} → {self.comprador} ({self.item}) por {self.precio} €"
 
-#=================================================================
-# CÓDIGOS PROMOCIONALES CANJEABLES POR ÍTEMS
-#=================================================================
+
 #=================================================================
 # CÓDIGOS PROMOCIONALES → VIDEOJUEGO O SALDO VIRTUAL (MULTI-USO)
 #=================================================================
@@ -205,3 +237,15 @@ class Amistad(models.Model):
     def __str__(self):
         estado = "Aceptada" if self.aceptada else "Pendiente"
         return f"{self.solicitante} → {self.receptor} ({estado})"
+
+
+class MensajePrivado(models.Model):
+    emisor = models.ForeignKey(Usuario, related_name='mensajes_enviados', on_delete=models.CASCADE)
+    receptor = models.ForeignKey(Usuario, related_name='mensajes_recibidos', on_delete=models.CASCADE)
+    contenido = models.TextField(max_length=1000)
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.emisor.username} → {self.receptor.username}: {self.contenido[:30]}"
+
+
