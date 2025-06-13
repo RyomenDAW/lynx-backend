@@ -5,14 +5,14 @@ from .models import *
 # SERIALIZER USUARIO
 #=================================================================
 class UsuarioSerializer(serializers.ModelSerializer):
-    nombre_completo = serializers.SerializerMethodField()  # 👈 AÑADIDO
+    nombre_completo = serializers.SerializerMethodField()  
 
     class Meta:
         model = Usuario
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'rol', 'saldo_virtual', 'reputacion', 'avatar_base64',
-            'verificado', 'nombre_completo'  # 👈 INCLUIDO
+            'verificado', 'nombre_completo'  
         ]
 
     def get_nombre_completo(self, obj):
@@ -197,6 +197,7 @@ class TransaccionItemSerializer(serializers.ModelSerializer):
         model = TransaccionItem
         fields = '__all__'
 
+
 # SERIALIZER MENSAJE PRIVADO
 class MensajePrivadoSerializer(serializers.ModelSerializer):
     emisor = UsuarioSerializer(read_only=True)
@@ -205,3 +206,61 @@ class MensajePrivadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = MensajePrivado
         fields = '__all__'
+
+#=================================================================
+# SERIALIZER REGISTRO VALIDADO
+#=================================================================
+
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
+Usuario = get_user_model()
+
+class RegisterSerializer(serializers.ModelSerializer):
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Usuario
+        fields = [
+            'username', 'password', 'confirm_password', 'first_name',
+            'last_name', 'email', 'rol', 'avatar_base64'
+        ]
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "Las contraseñas no coinciden."})
+        return data
+
+    def validate_username(self, value):
+        if Usuario.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Este nombre de usuario ya está en uso.")
+        return value
+
+    def validate_first_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("El nombre es obligatorio.")
+        return value
+
+    def validate_last_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Los apellidos son obligatorios.")
+        return value
+
+    def validate_email(self, value):
+        allowed_domains = ['@gmail.com', '@hotmail.com']
+        if not any(domain in value for domain in allowed_domains):
+            raise serializers.ValidationError("El email debe ser de dominio @gmail.com o @hotmail.com.")
+        return value
+
+    def validate_rol(self, value):
+        valid_roles = [choice[0] for choice in Usuario.RolChoices.choices]
+        if value not in valid_roles:
+            raise serializers.ValidationError("El rol seleccionado no es válido.")
+        return value
+
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        return Usuario.objects.create_user(**validated_data)
