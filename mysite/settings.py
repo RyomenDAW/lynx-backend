@@ -76,7 +76,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1",  # 127.0.0.1 para conexiones internas
     "http://54.211.83.209",  # Si es un dominio en producción
     "http://0.0.0.0:8000",  # Dirección del contenedor backend
-    "http://localhost:8000"  # O cualquier puerto y dirección pública de producción
+    "http://localhost:8000",  # O cualquier puerto y dirección pública de producción
+    "http://172.31.19.219",  # IP privada de tu frontend
 ]
 
 
@@ -165,7 +166,7 @@ AUTH_PASSWORD_VALIDATORS = [
 TIME_ZONE ='Europe/Madrid'
 LANGUAGE_CODE = 'es'
 STATIC_URL = '/static/'
-ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com','0.0.0.0', 'localhost', '54.211.83.209']
+ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com','0.0.0.0', 'localhost', '54.211.83.209', ]
 USE_TZ = False
 
 USE_I18N = True
@@ -195,6 +196,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 AUTH_USER_MODEL = 'lynx.Usuario'
 
+BACKEND_DOMAIN = env("BACKEND_DOMAIN")
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
