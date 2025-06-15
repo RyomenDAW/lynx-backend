@@ -31,24 +31,23 @@ class VideojuegoSerializer(serializers.ModelSerializer):
             'desarrollador', 'distribuidor',
             'requisitos_minimos', 'requisitos_recomendados',
             'soporte_mando', 'fecha_lanzamiento',
-            'imagen_portada',  # campo de entrada desde el frontend
-            'imagen_portada_base64',  # el campo real del modelo
+            'imagen_portada',
+            'imagen_portada_base64',
             'disponible'
         ]
         read_only_fields = ['imagen_portada_base64']
 
     def create(self, validated_data):
-        imagen = validated_data.pop('imagen_portada', None)
+        imagen = validated_data.pop("imagen_portada", None)
 
-        print("🛰️ VIDEOJUEGO RECIBIDO DESDE EL FRONTEND:")
-        for k, v in validated_data.items():
-            print(f"  ├── {k}: {v}")
+        print("📥 VIDEOJUEGO RECIBIDO COMPLETO:")
+        for campo, valor in validated_data.items():
+            print(f"  ├─ {campo}: {valor}")
         if imagen:
-            print("  └── ✅ Imagen base64 recibida (truncada):", imagen[:80], "...")
-
-            validated_data['imagen_portada_base64'] = imagen
+            print(f"  └─ ✅ Imagen recibida (base64 truncada): {imagen[:80]}...")
+            validated_data["imagen_portada_base64"] = imagen
         else:
-            print("  └── ⚠️ No se recibió imagen base64.")
+            print("  └─ ⚠️ No se recibió imagen base64.")
 
         return super().create(validated_data)
 
