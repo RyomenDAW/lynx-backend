@@ -1,5 +1,3 @@
-# lynx/api_views/marketplace_venta_api.py
-
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -15,6 +13,7 @@ class PonerEnVentaViewSet(viewsets.ModelViewSet):
     ViewSet para poner ítems en venta:
     - VER ÍTEMS EN VENTA PROPIOS (list)
     - PONER EN VENTA (POST → /poner_en_venta/)
+    - ELIMINAR ANUNCIO Y DEVOLVER ÍTEM AL INVENTARIO (DELETE)
     """
     serializer_class = ItemEnVentaSerializer
     permission_classes = [IsAuthenticated]
@@ -63,3 +62,25 @@ class PonerEnVentaViewSet(viewsets.ModelViewSet):
         )
 
         return Response({'success': f'Ítem "{item.nombre}" puesto en venta por {precio} €.'}, status=status.HTTP_201_CREATED)
+
+    #=================================================================
+    # SOBRESCRIBIR DELETE → DEVOLVER ÍTEM AL INVENTARIO DEL USUARIO
+    #=================================================================
+    def destroy(self, request, *args, **kwargs):
+        item_en_venta = self.get_object()
+        item = item_en_venta.item
+        usuario = item_en_venta.vendedor
+
+        # DEVOLVER EL ÍTEM AL INVENTARIO DEL USUARIO
+        inventario, creado = InventarioItem.objects.get_or_create(
+            usuario=usuario,
+            item=item,
+            defaults={'cantidad': 0}
+        )
+        inventario.cantidad += 1
+        inventario.save()
+
+        # ELIMINAR EL ANUNCIO DE LA TIENDA
+        item_en_venta.delete()
+
+        return Response({'success': 'Ítem eliminado del marketplace y devuelto al inventario.'}, status=status.HTTP_200_OK)
