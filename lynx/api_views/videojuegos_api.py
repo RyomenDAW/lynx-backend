@@ -21,8 +21,15 @@ class VideojuegoViewSet(viewsets.ModelViewSet):
         return [permissions.AllowAny()]
 
     def create(self, request, *args, **kwargs):
-        print("📦 DATOS RECIBIDOS EN EL BACKEND:", request.data.get("imagen_portada_base64")[:100])  # Primeros 100 chars
+        # ✅ EVITA EL ERROR 500 SI NO SE ENVÍA imagen_portada_base64
+        imagen = request.data.get("imagen_portada_base64")
+        if imagen:
+            print("📦 DATOS RECIBIDOS EN EL BACKEND (base64 truncado):", imagen[:100])
+        else:
+            print("📦 DATOS RECIBIDOS EN EL BACKEND: imagen_portada_base64 no recibido.")
+        
         return super().create(request, *args, **kwargs)
+
 
 #=================================================================
 # PERMISOS PERSONALIZADOS PARA ADMIN Y DIST SOLO EN MODIFICACIÓN
